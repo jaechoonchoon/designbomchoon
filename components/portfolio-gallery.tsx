@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 const CARD_SIZES =
   "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
 
-/** 카드 비율: 아주 긴 배너도 한 칸을 다 차지하지 않도록 세로 비율을 제한 */
+/** 세로/가로 비율 (열 배치 계산용). 크기를 모르는 새 작업은 A판 포스터 비율로 가정 */
 function cardRatio(w: Work) {
-  if (!w.w || !w.h) return 1.3;
-  return Math.min(Math.max(w.h / w.w, 0.6), 1.6);
+  if (!w.w || !w.h) return 1.414;
+  return w.h / w.w;
 }
 
 /** 최신 작업이 왼쪽 위부터 가로로 놓이도록, 가장 짧은 열에 순서대로 채움 */
@@ -95,17 +95,16 @@ export function PortfolioGallery({ works }: { works: Work[] }) {
               className="group block w-full text-left focus-visible:outline-none"
               aria-label={`${w.title} 크게 보기`}
             >
-              <div
-                className="relative w-full overflow-hidden rounded-md bg-muted ring-offset-4 group-focus-visible:ring-[3px] group-focus-visible:ring-ring/60"
-                style={{ aspectRatio: `1 / ${cardRatio(w)}` }}
-              >
+              <div className="relative w-full overflow-hidden rounded-md bg-muted ring-offset-4 group-focus-visible:ring-[3px] group-focus-visible:ring-ring/60">
+                {/* 잘림 없이 디자인물 전체를 원본 비율 그대로 표시 */}
                 <Image
                   src={w.images[0]}
                   alt={w.title}
-                  fill
+                  width={w.w || 1000}
+                  height={w.h || 1414}
                   sizes={CARD_SIZES}
                   priority={i < 4}
-                  className="object-cover object-top transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                  className="block h-auto w-full transition-transform duration-500 ease-out group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                 />
                 {w.images.length > 1 && (
                   <span className="absolute right-2.5 top-2.5 rounded-full bg-black/70 px-2.5 py-1 text-xs font-medium text-white tabular-nums">
