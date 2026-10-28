@@ -20,6 +20,10 @@ export type GradientWaveProps = {
     /** 물결이 흐르는 속도 */
     noiseFlow?: number;
   };
+  /** 처음 열릴 때 가운데에서 바깥으로 번져 나가는 모션 (기본 켜짐) */
+  bloom?: boolean;
+  /** 번짐이 화면을 다 채우는 데 걸리는 시간(초) */
+  bloomDuration?: number;
   className?: string;
 };
 
@@ -40,6 +44,7 @@ uniform vec2 u_freq;
 uniform float u_incline;
 uniform float u_amp;
 uniform float u_flow;
+uniform float u_bloom; // 0 → 1: 가운데에서 바깥으로 번져 나가는 진행도
 
 // Ashima simplex noise (MIT)
 vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
@@ -107,13 +112,26 @@ void main(){
   float n1=snoise(vec3(px.x*f.x,px.y*f.y,t));
   float n2=snoise(vec3(px.x*f.x*2.3+7.0,px.y*f.y*2.3,t*1.6))*0.45;
   float n=n1+n2;
-  float disp=n*u_amp/u_res.y;
+  // 숨 쉬듯 천천히 커졌다 작아지는 물결 높이
+  float breathe=1.0+0.18*sin(u_time*0.35);
+  float disp=n*u_amp*breathe/u_res.y;
   float g=(1.0-uv.y)+(uv.x-0.5)*u_incline+disp;
   g=g*0.9+0.05;
   vec3 col=palette(g);
   float shade=1.0-clamp(-n,0.0,1.0)*u_shadow*0.035;
   col*=shade;
   col=mix(col,col*0.82,u_darkenTop*smoothstep(0.55,1.0,uv.y));
+
+  // 번짐: 화면 가운데에서 시작해 물감처럼 불규칙한 가장자리로 퍼져 나감
+  // 캔버스는 0.6배 해상도로 그리므로, 화면 기준 0~1 좌표로 되돌려 정확히 가운데에서 시작
+  vec2 sv=gl_FragCoord.xy/(u_res*0.6);
+  vec2 c=(sv-vec2(0.5,0.55))*vec2(u_res.x/u_res.y,1.0);
+  float edge=snoise(vec3(px*0.004,u_time*0.25))*0.22;
+  float d=length(c)+edge;
+  float radius=u_bloom*1.8; // 1.0이면 가장자리 모서리까지 완전히 채워짐
+  float reveal=1.0-smoothstep(radius-0.45,radius,d);
+  col=mix(u_colors[0],col,reveal);
+
   gl_FragColor=vec4(col,1.0);
 }
 `;
@@ -131,17 +149,25 @@ export function GradientWave({
   darkenTop = false,
   noiseFrequency = [0.0001, 0.0002],
   deform = {},
+  bloom = true,
+  bloomDuration = 3.2,
   className,
 }: GradientWaveProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const { incline = 0.2, noiseAmp = 100, noiseFlow = 2 } = deform;
   const colorKey = colors.join(",");
+  const cssGradient = `linear-gradient(180deg, ${colors.join(", ")})`;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // WebGL을 못 쓰는 환경에서는 CSS 그라디언트를 대신 보여줌
+    const showCssFallback = () => {
+      if (wrapRef.current) wrapRef.current.style.background = cssGradient;
+    };
     const gl = canvas.getContext("webgl", { antialias: false, premultipliedAlpha: false });
-    if (!gl) return; // WebGL이 없으면 아래 CSS 그라디언트가 그대로 보임
+    if (!gl) return showCssFallback();
 
     const compile = (type: number, src: string) => {
       const s = gl.createShader(type)!;
@@ -156,7 +182,7 @@ export function GradientWave({
     gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
     gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
     gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return showCssFallback();
     gl.useProgram(prog);
 
     const buf = gl.createBuffer();
@@ -180,6 +206,7 @@ export function GradientWave({
     gl.uniform1f(u("u_flow"), noiseFlow);
     const uRes = u("u_res");
     const uTime = u("u_time");
+    const uBloom = u("u_bloom");
 
     const resize = () => {
       // 부드러운 그라디언트라 해상도를 낮춰도 티가 안 나고 GPU 부담이 줄어듦
@@ -203,9 +230,16 @@ export function GradientWave({
     });
     io.observe(canvas);
     const start = performance.now();
-    const draw = (now: number) => {
+    let bloomStart = -1; // 첫 화면이 실제로 그려지는 순간부터 번짐 시작
+    const draw = () => {
       if (visible) {
-        gl.uniform1f(uTime, reduce ? 12 : (now - start) / 1000);
+        const now = performance.now();
+        if (bloomStart < 0) bloomStart = now;
+        const elapsed = (now - start) / 1000;
+        // 번짐 진행도: 천천히 시작해 고르게 퍼지다 부드럽게 멈춤 (smoothstep)
+        const p = bloom && !reduce ? Math.min((now - bloomStart) / 1000 / bloomDuration, 1) : 1;
+        gl.uniform1f(uBloom, p * p * (3 - 2 * p));
+        gl.uniform1f(uTime, reduce ? 12 : elapsed);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
       if (!reduce) raf = requestAnimationFrame(draw);
@@ -220,13 +254,15 @@ export function GradientWave({
       gl.deleteBuffer(buf);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey, shadowPower, darkenTop, noiseFrequency[0], noiseFrequency[1], incline, noiseAmp, noiseFlow]);
+  }, [colorKey, shadowPower, darkenTop, noiseFrequency[0], noiseFrequency[1], incline, noiseAmp, noiseFlow, bloom, bloomDuration, cssGradient]);
 
   return (
     <div
+      ref={wrapRef}
       aria-hidden
       className={cn("absolute inset-0 -z-10 overflow-hidden", className)}
-      style={{ background: `linear-gradient(180deg, ${colors.join(", ")})` }}
+      // 번짐 모션은 첫 색(흰색)에서 시작하므로 처음 배경도 첫 색으로 맞춰 깜빡임을 막음
+      style={{ background: bloom ? colors[0] : cssGradient }}
     >
       <canvas ref={canvasRef} className="h-full w-full" />
     </div>
