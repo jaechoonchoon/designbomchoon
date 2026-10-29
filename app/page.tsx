@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HeroSection01 } from "@/components/ui/hero-01";
 import { Button } from "@/components/ui/button";
+import { KAKAO_CHAT, SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 
 const fields = [
   {
@@ -35,6 +36,23 @@ const steps = [
 export default function Home() {
   return (
     <main className="flex-1">
+      {/* 검색엔진용 사업자 정보 (화면에는 보이지 않음) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ProfessionalService",
+            name: "디자인봄춘",
+            alternateName: "DESIGN BOMCHOON",
+            url: SITE_URL,
+            description: SITE_DESCRIPTION,
+            areaServed: ["서울", "인천", "대한민국"],
+            knowsLanguage: ["ko", "zh", "en"],
+            sameAs: [KAKAO_CHAT],
+          }),
+        }}
+      />
       <header className="absolute inset-x-0 top-0 z-20">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-sm font-bold tracking-tight text-black">

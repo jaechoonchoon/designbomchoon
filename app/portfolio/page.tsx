@@ -6,9 +6,11 @@ import { PortfolioIntro } from "@/components/portfolio-intro";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "포트폴리오 | 디자인봄춘 DESIGN BOMCHOON",
+  title: "포트폴리오 - 포스터·배너·메뉴판·카드뉴스 디자인",
   description:
-    "디자인봄춘의 포스터, 배너, SNS 콘텐츠, 메뉴보드 디자인 작업물. 카페·식음료, 병원·관공서, 기업 프로젝트.",
+    "디자인봄춘의 포스터, 배너, SNS 카드뉴스, 메뉴판 디자인 작업물. 카페·식음료, 병원·관공서, 기업 프로젝트 포트폴리오.",
+  alternates: { canonical: "/portfolio" },
+  openGraph: { url: "/portfolio", title: "디자인봄춘 포트폴리오", locale: "ko_KR", type: "website" },
 };
 
 const KAKAO_CHAT = "https://pf.kakao.com/_WLSHn/chat";
