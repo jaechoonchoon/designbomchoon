@@ -31,14 +31,14 @@ export function HeroSection01() {
           </p>
           <div className="flex gap-3 mt-6 flex-wrap justify-center">
             <Button asChild className="h-12 md:h-14 rounded-full px-8 md:px-10 text-base">
-              <Link href="#contact">디자인 문의하기</Link>
+              <Link href="/portfolio">포트폴리오 보기</Link>
             </Button>
             <Button
               asChild
               variant="secondary"
               className="h-12 md:h-14 rounded-full px-8 md:px-10 text-base bg-white/70 backdrop-blur hover:bg-white"
             >
-              <Link href="/portfolio">포트폴리오 보기</Link>
+              <Link href="#contact">디자인 문의하기</Link>
             </Button>
           </div>
         </div>
