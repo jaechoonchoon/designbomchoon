@@ -6,7 +6,7 @@
  *    의 content 값만 아래 NAVER_VERIFICATION 따옴표 안에 붙여 넣으세요.
  * 2) 구글 서치콘솔도 쓰려면 같은 방식으로 GOOGLE_VERIFICATION 에 넣으세요.
  */
-export const NAVER_VERIFICATION = "";
+export const NAVER_VERIFICATION = "naver-site-verification" content="53fdff21488aef6965235373424ed1dfb2b81413";
 export const GOOGLE_VERIFICATION = "";
 
 /** 사이트 주소. 넷리파이에서는 배포할 때 자동으로 실제 주소(URL)가 들어갑니다. */
