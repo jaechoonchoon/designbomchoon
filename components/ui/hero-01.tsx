@@ -17,7 +17,7 @@ export function HeroSection01() {
       />
       <div className="flex flex-col text-center px-6">
         <h1 className="font-extrabold text-black mix-blend-overlay tracking-tighter leading-[0.9] text-[13.5vw] sm:text-7xl md:text-8xl lg:text-9xl">
-          designboom.
+          designbom.
           <br />
           choon.
         </h1>
