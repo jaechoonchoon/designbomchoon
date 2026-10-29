@@ -7,7 +7,7 @@
  * 2) 구글 서치콘솔도 쓰려면 같은 방식으로 GOOGLE_VERIFICATION 에 넣으세요.
  */
 export const NAVER_VERIFICATION = "53fdff21488aef6965235373424ed1dfb2b81413";
-export const GOOGLE_VERIFICATION = "google3800b2c1f6625888";
+export const GOOGLE_VERIFICATION = "google-site-verification: google3800b2c1f6625888.html";
 
 /** 사이트 주소. 넷리파이에서는 배포할 때 자동으로 실제 주소(URL)가 들어갑니다. */
 export const SITE_URL = (process.env.URL ?? "https://designbomchoon.netlify.app").replace(/\/$/, "");
